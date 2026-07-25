@@ -144,7 +144,7 @@
 
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-  .field-input, select.field-input, textarea.field-input { width: 100%; border: none; border-radius: 12px; padding: 12px 14px; font-size: 14.5px; font-family: 'Inter', sans-serif; background: var(--panel); color: var(--ink); outline: none; }
+  .field-input, select.field-input, textarea.field-input { width: 100%; border: none; border-radius: 12px; padding: 12px 14px; font-size: 16px; font-family: 'Inter', sans-serif; background: var(--panel); color: var(--ink); outline: none; }
   textarea.field-input { resize: vertical; min-height: 70px; }
   .field-row { display: flex; gap: 10px; }
   .field-row .field { flex: 1; }
@@ -483,6 +483,14 @@
                 dark:  { bg:'#16211A', panel:'#1E2C22', ink:'#E3F0E7', muted:'#95AC9E', border:'#2C3E32', accent:'#8FCB9F', accentText:'#12200F', shadowD:'6,10,7', shadowL:'55,72,60' } },
     senja:    { name: 'Senja Pastel', light: { bg:'#FBEEE1', panel:'#F5EDE4', ink:'#3E352C', muted:'#8A7C6A', border:'#EADFCF', accent:'#C9A97E', accentText:'#FDFBF8', shadowD:'150,130,100', shadowL:'255,255,255' },
                 dark:  { bg:'#211C22', panel:'#2C2620', ink:'#EDE4D8', muted:'#B8AA96', border:'#3C3428', accent:'#D9BC91', accentText:'#221C10', shadowD:'8,7,6', shadowL:'60,55,45' } },
+    merah:    { name: 'Merah', light: { bg:'#FBEAE6', panel:'#FCF0ED', ink:'#4A2620', muted:'#9C7A70', border:'#F2D9D2', accent:'#D97862', accentText:'#FFFBF8', shadowD:'150,100,85', shadowL:'255,255,255' },
+                dark:  { bg:'#241612', panel:'#2E1D18', ink:'#F2E2DC', muted:'#C4A296', border:'#3E2A22', accent:'#E6947E', accentText:'#241109', shadowD:'8,5,4', shadowL:'62,42,34' } },
+    oren:     { name: 'Oren', light: { bg:'#FBEEDD', panel:'#FCF3E6', ink:'#4A3319', muted:'#9B8365', border:'#F2DFC4', accent:'#E0A050', accentText:'#FFFBF5', shadowD:'150,120,70', shadowL:'255,255,255' },
+                dark:  { bg:'#241C10', panel:'#2E2416', ink:'#F2E6D4', muted:'#C4B296', border:'#3E3220', accent:'#EDB876', accentText:'#241704', shadowD:'8,6,3', shadowL:'62,50,34' } },
+    kuning:   { name: 'Kuning', light: { bg:'#FBF7DE', panel:'#FCFAE8', ink:'#453F14', muted:'#948C5E', border:'#F0E9BE', accent:'#D9C34D', accentText:'#3A3410', shadowD:'145,130,60', shadowL:'255,255,255' },
+                dark:  { bg:'#211F0E', panel:'#2B2814', ink:'#EFE9C8', muted:'#B8AE85', border:'#3A3620', accent:'#E0CC66', accentText:'#211E08', shadowD:'7,6,3', shadowL:'58,54,32' } },
+    coklat:   { name: 'Coklat', light: { bg:'#F0E5DA', panel:'#F5EEE5', ink:'#3A2A1E', muted:'#8A7565', border:'#E3D2C0', accent:'#A17A56', accentText:'#FBF6F0', shadowD:'110,85,60', shadowL:'255,255,255' },
+                dark:  { bg:'#1E1712', panel:'#281F18', ink:'#EBE0D4', muted:'#B39F8C', border:'#382C22', accent:'#BC9670', accentText:'#1A1108', shadowD:'6,4,3', shadowL:'52,44,36' } },
   };
 
   function toggleDarkMode() { state.darkMode = !state.darkMode; applyTheme(); persistSettings(); }
