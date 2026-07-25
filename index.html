@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Me.Car</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Me.Car">
+<meta name="theme-color" content="#ECE6F7" id="theme-color-meta">
+<link rel="apple-touch-icon" sizes="180x180" href="mecar-icon-180.png">
+<link rel="icon" type="image/png" href="mecar-icon.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root {
+    --bg-outer: #ECE6F7;
+    --paper: #FFFBF8;
+    --panel: #F4EEFC;
+    --ink: #473F58;
+    --muted: #9A90AC;
+    --border: #E4DCF2;
+    --accent: #C3AEE8;
+    --accent-text: #3A2E56;
+    --danger: #C97462;
+    --danger-text: #7A3326;
+    --good: #7FB88F;
+    --good-text: #245234;
+    --warn: #E0B34D;
+    --warn-text: #6B4E12;
+    --shadow-d-rgb: 150,130,180;
+    --shadow-l-rgb: 255,255,255;
+  }
+  body.dark {
+    --bg-outer: #262133;
+    --paper: #322C44;
+    --panel: #3C3552;
+    --ink: #EAE4F5;
+    --muted: #AFA3C8;
+    --border: #4A4262;
+    --accent: #B79CE8;
+    --accent-text: #2A2140;
+    --danger: #E0958A;
+    --danger-text: #F6C0B5;
+    --good: #8FCB9F;
+    --good-text: #DFF3E4;
+    --warn: #E8C876;
+    --warn-text: #4A3708;
+    --shadow-d-rgb: 15,12,22;
+    --shadow-l-rgb: 90,80,112;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-outer);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  h1, h2, h3, .heading-font { font-family: 'Space Grotesk', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .neu-out { box-shadow: 5px 5px 12px rgba(var(--shadow-d-rgb),0.28), -5px -5px 12px rgba(var(--shadow-l-rgb),0.9); }
+  .neu-out-sm { box-shadow: 3px 3px 8px rgba(var(--shadow-d-rgb),0.24), -3px -3px 8px rgba(var(--shadow-l-rgb),0.85); }
+  .neu-in { box-shadow: inset 3px 3px 7px rgba(var(--shadow-d-rgb),0.26), inset -3px -3px 7px rgba(var(--shadow-l-rgb),0.7); }
+
+  .page { min-height: 100vh; display: flex; justify-content: center; }
+  .shell { width: 100%; max-width: 480px; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .app-header { display: flex; align-items: center; gap: 12px; padding: 20px 18px 16px; }
+  .logo-mark { width: 40px; height: 40px; border-radius: 13px; background: var(--accent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 19px; }
+  .app-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 19px; color: var(--ink); line-height: 1.15; }
+  .app-tagline { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .sync-badge { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-right: 4px; }
+  .sync-badge.local { background: #C9C2C2; }
+  .sync-badge.syncing { background: #E0B34D; animation: pulse-sync 1s infinite; }
+  .sync-badge.synced { background: #5FB87A; }
+  .sync-badge.error { background: #D9695F; }
+  @keyframes pulse-sync { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .menu-toggle-btn { width: 38px; height: 38px; border-radius: 12px; background: var(--panel); border: none; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .body-scroll { flex: 1; padding: 4px 18px 100px; overflow-y: auto; }
+
+  /* ---------- dropdown menu (Buku Tiga 5 concept) ---------- */
+  .menu-overlay { position: fixed; inset: 0; z-index: 200; background: transparent; }
+  .dropdown-menu { position: absolute; top: 68px; right: 16px; background: var(--paper); border-radius: 16px; padding: 8px; width: 230px; z-index: 201;
+    box-shadow: 8px 8px 20px rgba(var(--shadow-d-rgb),0.3), -6px -6px 16px rgba(var(--shadow-l-rgb),0.6);
+    animation: dropdownPopIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both; transform-origin: top right; }
+  @keyframes dropdownPopIn { from { opacity:0; transform:scale(0.9) translateY(-8px);} to { opacity:1; transform:scale(1) translateY(0);} }
+  .dropdown-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border: none; border-radius: 11px; padding: 11px 12px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; font-family: 'Inter', sans-serif; }
+  .dropdown-item:hover { background: var(--panel); }
+  .dropdown-divider { height: 1px; background: var(--border); margin: 6px 6px; }
+
+  /* ---------- bottom nav ---------- */
+  .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; background: var(--paper);
+    box-shadow: 0 -6px 18px rgba(var(--shadow-d-rgb),0.14); padding: 8px calc(10px + env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-right)); z-index: 30; }
+  .nav-bar-inner { width: 100%; max-width: 480px; display: flex; }
+  .nav-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; color: var(--muted); font-size: 10.5px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border-radius: 12px; }
+  .nav-btn.active { color: var(--accent-text); background: var(--panel); }
+  .nav-btn svg { width: 20px; height: 20px; }
+
+  /* ---------- cards ---------- */
+  .card { background: var(--paper); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+  .card-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .hero-card { background: var(--accent); color: var(--accent-text); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+  .hero-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.75; margin-bottom: 4px; }
+  .hero-value { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
+  .hero-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+  .section-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 2px 10px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .badge-good { background: color-mix(in srgb, var(--good) 22%, var(--paper)); color: var(--good-text); }
+  .badge-warn { background: color-mix(in srgb, var(--warn) 28%, var(--paper)); color: var(--warn-text); }
+  .badge-danger { background: color-mix(in srgb, var(--danger) 24%, var(--paper)); color: var(--danger-text); }
+
+  .item-card { background: var(--paper); border-radius: 16px; padding: 15px 16px; margin-bottom: 12px; cursor: pointer; }
+  .item-title { font-weight: 700; font-size: 14.5px; color: var(--ink); }
+  .item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .item-meta-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-state .ee-icon { font-size: 34px; margin-bottom: 10px; }
+  .empty-state .ee-title { font-weight: 700; color: var(--ink); font-size: 14.5px; margin-bottom: 4px; }
+  .empty-state .ee-sub { font-size: 12.5px; }
+
+  .fab-btn { position: fixed; bottom: calc(84px + env(safe-area-inset-bottom)); right: calc(20px + env(safe-area-inset-right)); width: 56px; height: 56px; border-radius: 50%; border: none;
+    background: var(--accent); color: var(--accent-text); font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 25;
+    box-shadow: 6px 6px 16px rgba(var(--shadow-d-rgb),0.35); }
+
+  /* ---------- forms / modals ---------- */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(40,32,58,0.42); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+  @media (min-width: 560px) { .modal-overlay { align-items: center; } }
+  .modal { background: var(--paper); width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; border-radius: 22px 22px 0 0; padding: 22px 20px calc(24px + env(safe-area-inset-bottom)); }
+  @media (min-width: 560px) { .modal { border-radius: 22px; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .modal-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; }
+  .close-btn { background: var(--panel); border: none; width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink); }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .field-input, select.field-input, textarea.field-input { width: 100%; border: none; border-radius: 12px; padding: 12px 14px; font-size: 14.5px; font-family: 'Inter', sans-serif; background: var(--panel); color: var(--ink); outline: none; }
+  textarea.field-input { resize: vertical; min-height: 70px; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+
+  .btn { border: none; border-radius: 14px; padding: 13px 20px; font-size: 14px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
+  .btn-secondary { background: var(--panel); color: var(--ink); }
+  .btn-danger-text { background: transparent; color: var(--danger-text); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-actions .btn { flex: 1; }
+
+  .type-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .type-chip { padding: 8px 13px; border-radius: 20px; background: var(--panel); border: none; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; font-family: 'Inter', sans-serif; }
+  .type-chip.active { background: var(--accent); color: var(--accent-text); }
+
+  .error-banner { background: color-mix(in srgb, var(--danger) 20%, var(--paper)); color: var(--danger-text); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 14px; }
+
+  /* ---------- theme picker ---------- */
+  .theme-swatch-preview { width: 100%; height: 34px; border-radius: 10px; }
+  .theme-option-row { display: flex; flex-direction: column; gap: 8px; width: 100%; background: var(--panel); border: none; border-radius: 14px; padding: 12px; margin-bottom: 10px; cursor: pointer; text-align: left; }
+  .theme-option-row.active { box-shadow: inset 2px 2px 5px rgba(var(--shadow-d-rgb),0.28), inset -2px -2px 5px rgba(var(--shadow-l-rgb),0.6); }
+  .theme-option-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+  /* ---------- auth ---------- */
+  .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg-outer); }
+  .auth-card { width: 100%; max-width: 380px; background: var(--paper); border-radius: 20px; padding: 30px 24px;
+    box-shadow: 10px 10px 24px rgba(var(--shadow-d-rgb),0.3), -6px -6px 16px rgba(var(--shadow-l-rgb),0.6); }
+  .auth-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 21px; color: var(--ink); text-align: center; margin-bottom: 4px; }
+  .auth-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 22px; }
+  .auth-switch { text-align: center; font-size: 13px; margin-top: 16px; color: var(--muted); }
+  .auth-switch button { background: none; border: none; color: var(--accent-text); font-weight: 700; cursor: pointer; text-decoration: underline; font-size: 13px; }
+  .auth-note { background: #FBE7C6; color: #6B4A1E; border-radius: 12px; padding: 10px 12px; font-size: 12px; margin-bottom: 16px; line-height: 1.5; }
+  .auth-skip { text-align: center; margin-top: 14px; }
+  .auth-skip button { background: none; border: none; color: var(--muted); font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="authRoot"></div>
+
+<div id="mainPage" style="display:none;">
+<div class="page">
+  <div class="shell">
+    <div class="app-header">
+      <div class="logo-mark" id="icon-logo">🚗</div>
+      <div style="flex:1;">
+        <div class="app-name">Me.Car</div>
+        <div class="app-tagline">lesen, road tax &amp; servis, semua dalam satu</div>
+      </div>
+      <div class="sync-badge" id="sync-badge" title="Status segerak"></div>
+      <button type="button" class="menu-toggle-btn" id="menu-btn" onclick="toggleMenu(event)">☰</button>
+    </div>
+    <div class="body-scroll" id="bodyRoot"></div>
+  </div>
+</div>
+</div>
+
+<div class="nav-bar" id="navBar" style="display:none;">
+  <div class="nav-bar-inner">
+    <button type="button" class="nav-btn" id="nav-home" onclick="setPage('home')">🏠<span>Utama</span></button>
+    <button type="button" class="nav-btn" id="nav-vehicles" onclick="setPage('vehicles')">🚘<span>Kenderaan</span></button>
+    <button type="button" class="nav-btn" id="nav-maintenance" onclick="setPage('maintenance')">🔧<span>Servis</span></button>
+    <button type="button" class="nav-btn" id="nav-documents" onclick="setPage('documents')">📄<span>Dokumen</span></button>
+  </div>
+</div>
+
+<div id="menuRoot"></div>
+<div id="modalRoot"></div>
+
+<script>
+  // ---------- storage shim (artifact storage -> localStorage fallback) ----------
+  const hasArtifactStorage = typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+  async function storageGet(key) {
+    if (hasArtifactStorage) { try { return await window.storage.get(key, false); } catch (e) { return null; } }
+    try { const raw = localStorage.getItem('mecar_' + key); return raw === null ? null : { key: key, value: raw }; } catch (e) { return null; }
+  }
+  async function storageSet(key, value) {
+    if (hasArtifactStorage) { try { return await window.storage.set(key, value, false); } catch (e) { return null; } }
+    try { localStorage.setItem('mecar_' + key, value); return { key: key, value: value }; } catch (e) { return null; }
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function todayStr() { const d = new Date(); return d.toISOString().slice(0, 10); }
+  function fmtDate(iso) {
+    if (!iso) return '\u2014';
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return iso;
+    const bulan = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+    return d.getDate() + ' ' + bulan[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function fmtRM(n) { return 'RM' + (Number(n) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function daysUntil(iso) {
+    if (!iso) return null;
+    const target = new Date(iso + 'T00:00:00');
+    const now = new Date(); now.setHours(0,0,0,0);
+    return Math.round((target - now) / 86400000);
+  }
+  function expiryBadge(iso) {
+    if (!iso) return '<span class="badge badge-warn">Tiada tarikh</span>';
+    const d = daysUntil(iso);
+    if (d < 0) return '<span class="badge badge-danger">Luput ' + Math.abs(d) + ' hari lalu</span>';
+    if (d <= 30) return '<span class="badge badge-danger">' + d + ' hari lagi</span>';
+    if (d <= 90) return '<span class="badge badge-warn">' + d + ' hari lagi</span>';
+    return '<span class="badge badge-good">' + fmtDate(iso) + '</span>';
+  }
+
+  const MAINT_TYPES = ['Servis Berkala', 'Bateri', 'Palam Pencucuh (Spark Plug)', 'Minyak Hitam', 'Tayar', 'Brek', 'Penghawa Dingin', 'Lain-lain'];
+
+  // ---------- Supabase (cloud sync) ----------
+  const SUPABASE_URL = 'https://zdtmljxdmllbdzjdwrwa.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdG1sanhkbWxsYmR6amR3cndhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5Mzk4MTcsImV4cCI6MjEwMDUxNTgxN30.JKNy0pX8wBdrr3Oud_ydr3IXnM5yjSJpOfKz9FxFIC0';
+
+  let supabaseClient = null;
+  try {
+    if (SUPABASE_URL.indexOf('YOUR-PROJECT-REF') === -1 && typeof supabase !== 'undefined' && supabase.createClient) {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  } catch (e) { supabaseClient = null; }
+
+  let currentUser = null;
+  let authMode = 'signin';
+  let syncStatus = 'local';
+
+  function renderSyncBadge() {
+    const el = document.getElementById('sync-badge');
+    if (!el) return;
+    el.className = 'sync-badge ' + syncStatus;
+    const labels = { local: 'Simpan di peranti ini sahaja', syncing: 'Sedang segerak\u2026', synced: 'Disegerak dengan cloud', error: 'Gagal segerak \u2014 disimpan di peranti sahaja' };
+    el.title = labels[syncStatus] || '';
+  }
+
+  function renderAuthScreen(errorMsg) {
+    document.getElementById('mainPage').style.display = 'none';
+    document.getElementById('navBar').style.display = 'none';
+    let html = '<div class="auth-page"><div class="auth-card">';
+    html += '<div class="auth-title">Me.Car</div>';
+    html += '<div class="auth-sub">' + (authMode === 'signup' ? 'Cipta akaun untuk segerak merentas peranti' : 'Log masuk untuk segerak data anda') + '</div>';
+    if (!supabaseClient) {
+      html += '<div class="auth-note">Tak dapat sambung ke perkhidmatan cloud buat masa ini \u2014 mungkin sambungan internet terputus, atau projek Supabase belum disambungkan lagi. Data masih boleh disimpan di peranti ini sahaja buat sementara.</div>';
+    }
+    if (errorMsg) html += '<div class="error-banner">' + escapeHtml(errorMsg) + '</div>';
+    html += '<div class="field"><label>Emel</label><input type="email" class="field-input" id="auth-email" placeholder="anda@emel.com"></div>';
+    html += '<div class="field"><label>Kata Laluan</label><input type="password" class="field-input" id="auth-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" onkeydown="if(event.key===\'Enter\')handleAuthSubmit()"></div>';
+    html += '<button type="button" class="btn btn-primary" id="auth-submit-btn" onclick="handleAuthSubmit()"' + (supabaseClient ? '' : ' disabled') + '>' + (authMode === 'signup' ? 'Daftar' : 'Log Masuk') + '</button>';
+    html += '<div class="auth-switch">';
+    html += authMode === 'signup'
+      ? 'Dah ada akaun? <button onclick="authMode=\'signin\';renderAuthScreen()">Log masuk</button>'
+      : 'Belum ada akaun? <button onclick="authMode=\'signup\';renderAuthScreen()">Daftar</button>';
+    html += '</div>';
+    html += '<div class="auth-skip"><button onclick="skipAuthLocalOnly()">Guna tanpa akaun (peranti ini sahaja)</button></div>';
+    html += '</div></div>';
+    document.getElementById('authRoot').innerHTML = html;
+    document.getElementById('authRoot').style.display = '';
+  }
+
+  function skipAuthLocalOnly() {
+    document.getElementById('authRoot').innerHTML = '';
+    document.getElementById('authRoot').style.display = 'none';
+    document.getElementById('mainPage').style.display = '';
+    document.getElementById('navBar').style.display = '';
+    loadData();
+  }
+
+  async function handleAuthSubmit() {
+    const email = (document.getElementById('auth-email').value || '').trim();
+    const password = document.getElementById('auth-password').value || '';
+    if (!email || !password) { renderAuthScreen('Sila isi emel dan kata laluan.'); return; }
+    const btn = document.getElementById('auth-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sila tunggu\u2026'; }
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data.user && !data.session) {
+          renderAuthScreen('Emel pengesahan telah dihantar. Sila semak emel anda, kemudian log masuk.');
+          authMode = 'signin';
+          return;
+        }
+        currentUser = data.user;
+      } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        currentUser = data.user;
+      }
+      enterApp();
+    } catch (err) {
+      renderAuthScreen(err.message || 'Log masuk gagal. Sila cuba lagi.');
+    }
+  }
+
+  async function enterApp() {
+    document.getElementById('authRoot').innerHTML = '';
+    document.getElementById('authRoot').style.display = 'none';
+    document.getElementById('mainPage').style.display = '';
+    document.getElementById('navBar').style.display = '';
+    await migrateLocalDataToCloudIfNeeded();
+    loadData();
+  }
+
+  function handleLogout() {
+    if (supabaseClient && currentUser) supabaseClient.auth.signOut();
+    currentUser = null;
+    state = { page: 'home', loaded: false, vehicles: [], maintenance: [], documents: [], darkMode: false, theme: 'lavender' };
+    document.getElementById('mainPage').style.display = 'none';
+    document.getElementById('navBar').style.display = 'none';
+    authMode = 'signin';
+    renderAuthScreen();
+  }
+
+  async function initAuth() {
+    if (!supabaseClient) { renderAuthScreen(); return; }
+    const { data } = await supabaseClient.auth.getSession();
+    if (data && data.session && data.session.user) {
+      currentUser = data.session.user;
+      enterApp();
+    } else {
+      renderAuthScreen();
+    }
+  }
+
+  async function cloudSaveField(column, value) {
+    if (!supabaseClient || !currentUser) return false;
+    syncStatus = 'syncing'; renderSyncBadge();
+    const payload = { user_id: currentUser.id, updated_at: new Date().toISOString() };
+    payload[column] = value;
+    const { error } = await supabaseClient.from('mecar_data').upsert(payload, { onConflict: 'user_id' });
+    if (error) { console.error('Gagal segerak (' + column + ')', error); syncStatus = 'error'; renderSyncBadge(); return false; }
+    syncStatus = 'synced'; renderSyncBadge();
+    return true;
+  }
+
+  async function cloudLoadAll() {
+    if (!supabaseClient || !currentUser) return null;
+    const { data, error } = await supabaseClient.from('mecar_data').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (error) { console.error('Gagal muat data cloud', error); return null; }
+    if (!data) return { empty: true };
+    return {
+      empty: false,
+      vehicles: data.vehicles || [],
+      maintenance: data.maintenance || [],
+      documents: data.documents || [],
+      darkMode: !!data.dark_mode,
+      theme: data.theme || 'lavender'
+    };
+  }
+
+  async function migrateLocalDataToCloudIfNeeded() {
+    if (!currentUser) return;
+    const cloud = await cloudLoadAll();
+    if (cloud === null) return;
+    if (!cloud.empty) return;
+    let localVehicles = [], localMaintenance = [], localDocuments = [], localSettings = null;
+    try {
+      const [v, m, d, s] = await Promise.all([storageGet('vehicles'), storageGet('maintenance'), storageGet('documents'), storageGet('settings')]);
+      if (v) localVehicles = JSON.parse(v.value) || [];
+      if (m) localMaintenance = JSON.parse(m.value) || [];
+      if (d) localDocuments = JSON.parse(d.value) || [];
+      if (s) localSettings = JSON.parse(s.value);
+    } catch (e) { return; }
+    if (localVehicles.length === 0 && localMaintenance.length === 0 && localDocuments.length === 0) return;
+    syncStatus = 'syncing'; renderSyncBadge();
+    const payload = {
+      user_id: currentUser.id,
+      vehicles: localVehicles, maintenance: localMaintenance, documents: localDocuments,
+      dark_mode: localSettings ? !!localSettings.darkMode : false,
+      theme: localSettings ? (localSettings.theme || 'lavender') : 'lavender',
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabaseClient.from('mecar_data').upsert(payload, { onConflict: 'user_id' });
+    if (error) { console.error('Gagal naikkan data sedia ada ke cloud', error); syncStatus = 'error'; }
+    else { syncStatus = 'synced'; }
+    renderSyncBadge();
+  }
+
+  // ---------- state ----------
+  let state = { page: 'home', loaded: false, vehicles: [], maintenance: [], documents: [], darkMode: false, theme: 'lavender' };
+
+  async function loadData() {
+    if (currentUser) {
+      syncStatus = 'syncing'; renderSyncBadge();
+      const cloud = await cloudLoadAll();
+      if (cloud !== null) {
+        state.vehicles = cloud.vehicles || [];
+        state.maintenance = cloud.maintenance || [];
+        state.documents = cloud.documents || [];
+        state.darkMode = !!cloud.darkMode;
+        state.theme = cloud.theme || 'lavender';
+        syncStatus = 'synced';
+      } else { syncStatus = 'error'; }
+      applyTheme();
+      state.loaded = true;
+      render();
+      renderSyncBadge();
+      return;
+    }
+    try {
+      const [v, m, d, s] = await Promise.all([storageGet('vehicles'), storageGet('maintenance'), storageGet('documents'), storageGet('settings')]);
+      if (v) state.vehicles = JSON.parse(v.value);
+      if (m) state.maintenance = JSON.parse(m.value);
+      if (d) state.documents = JSON.parse(d.value);
+      if (s) { const parsed = JSON.parse(s.value); state.darkMode = !!parsed.darkMode; state.theme = parsed.theme || 'lavender'; }
+    } catch (e) { /* first run */ }
+    applyTheme();
+    state.loaded = true;
+    syncStatus = 'local';
+    render();
+    renderSyncBadge();
+  }
+  async function persistVehicles() {
+    try { await storageSet('vehicles', JSON.stringify(state.vehicles)); } catch (e) { console.error(e); }
+    if (currentUser) cloudSaveField('vehicles', state.vehicles);
+  }
+  async function persistMaintenance() {
+    try { await storageSet('maintenance', JSON.stringify(state.maintenance)); } catch (e) { console.error(e); }
+    if (currentUser) cloudSaveField('maintenance', state.maintenance);
+  }
+  async function persistDocuments() {
+    try { await storageSet('documents', JSON.stringify(state.documents)); } catch (e) { console.error(e); }
+    if (currentUser) cloudSaveField('documents', state.documents);
+  }
+  async function persistSettings() {
+    try { await storageSet('settings', JSON.stringify({ darkMode: state.darkMode, theme: state.theme })); } catch (e) { console.error(e); }
+    if (currentUser) { cloudSaveField('dark_mode', state.darkMode); cloudSaveField('theme', state.theme); }
+  }
+
+  // ---------- theme ----------
+  const THEME_PRESETS = {
+    lavender: { name: 'Lavender', light: { bg:'#ECE6F7', panel:'#F4EEFC', ink:'#473F58', muted:'#9A90AC', border:'#E4DCF2', accent:'#C3AEE8', accentText:'#3A2E56', shadowD:'150,130,180', shadowL:'255,255,255' },
+                dark:  { bg:'#262133', panel:'#3C3552', ink:'#EAE4F5', muted:'#AFA3C8', border:'#4A4262', accent:'#B79CE8', accentText:'#2A2140', shadowD:'15,12,22', shadowL:'90,80,112' } },
+    biru:     { name: 'Biru', light: { bg:'#E6F0F9', panel:'#EEF5FB', ink:'#22384A', muted:'#7C93A3', border:'#D3E4F0', accent:'#7CA9D9', accentText:'#FBFDFF', shadowD:'110,140,170', shadowL:'255,255,255' },
+                dark:  { bg:'#161F29', panel:'#1F2B38', ink:'#E4EEF6', muted:'#93A9BB', border:'#2C3B4A', accent:'#8FBBE8', accentText:'#122029', shadowD:'6,9,12', shadowL:'55,68,80' } },
+    hijau:    { name: 'Hijau', light: { bg:'#E7F2EA', panel:'#EFF7F1', ink:'#22392A', muted:'#6E8778', border:'#D3E7D8', accent:'#7FB88F', accentText:'#FBFEFC', shadowD:'100,150,115', shadowL:'255,255,255' },
+                dark:  { bg:'#16211A', panel:'#1E2C22', ink:'#E3F0E7', muted:'#95AC9E', border:'#2C3E32', accent:'#8FCB9F', accentText:'#12200F', shadowD:'6,10,7', shadowL:'55,72,60' } },
+    senja:    { name: 'Senja Pastel', light: { bg:'#FBEEE1', panel:'#F5EDE4', ink:'#3E352C', muted:'#8A7C6A', border:'#EADFCF', accent:'#C9A97E', accentText:'#FDFBF8', shadowD:'150,130,100', shadowL:'255,255,255' },
+                dark:  { bg:'#211C22', panel:'#2C2620', ink:'#EDE4D8', muted:'#B8AA96', border:'#3C3428', accent:'#D9BC91', accentText:'#221C10', shadowD:'8,7,6', shadowL:'60,55,45' } },
+  };
+
+  function toggleDarkMode() { state.darkMode = !state.darkMode; applyTheme(); persistSettings(); }
+  function setTheme(key) { state.theme = key; applyTheme(); persistSettings(); render(); }
+  function applyTheme() {
+    document.body.classList.toggle('dark', state.darkMode);
+    const preset = THEME_PRESETS[state.theme] || THEME_PRESETS.lavender;
+    const c = state.darkMode ? preset.dark : preset.light;
+    const root = document.documentElement.style;
+    root.setProperty('--bg-outer', c.bg);
+    root.setProperty('--panel', c.panel);
+    root.setProperty('--ink', c.ink);
+    root.setProperty('--muted', c.muted);
+    root.setProperty('--border', c.border);
+    root.setProperty('--accent', c.accent);
+    root.setProperty('--accent-text', c.accentText);
+    root.setProperty('--shadow-d-rgb', c.shadowD);
+    root.setProperty('--shadow-l-rgb', c.shadowL);
+    document.getElementById('theme-color-meta').setAttribute('content', c.bg);
+  }
+  function openThemePicker() {
+    let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">Warna Tema</span><button class="close-btn" onclick="closeModal()">\u2715</button></div>';
+    Object.keys(THEME_PRESETS).forEach(key => {
+      const preset = THEME_PRESETS[key];
+      html += '<button type="button" class="theme-option-row' + (state.theme === key ? ' active' : '') + '" onclick="setTheme(\'' + key + '\'); closeModal();">';
+      html += '<div class="theme-swatch-preview" style="background:' + preset.light.bg + ';"></div>';
+      html += '<div class="theme-option-name">' + preset.name + '</div>';
+      html += '</button>';
+    });
+    html += '</div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+  }
+
+  // ---------- nav / menu ----------
+  function setPage(p) { state.page = p; render(); window.scrollTo(0,0); }
+  let menuOpen = false;
+  function toggleMenu(e) { if (e) e.stopPropagation(); menuOpen = !menuOpen; renderMenu(); }
+  function closeMenu() { menuOpen = false; const r = document.getElementById('menuRoot'); if (r) r.innerHTML = ''; }
+  function renderMenu() {
+    const root = document.getElementById('menuRoot');
+    if (!menuOpen) { root.innerHTML = ''; return; }
+    let html = '<div class="menu-overlay" onclick="closeMenu()"><div class="dropdown-menu" onclick="event.stopPropagation()">';
+    html += '<button type="button" class="dropdown-item" onclick="closeMenu(); openThemePicker();">\uD83C\uDFA8 Warna Tema</button>';
+    html += '<button type="button" class="dropdown-item" onclick="toggleDarkMode(); renderMenu();">' + (state.darkMode ? '\u2600\uFE0F Mod Terang' : '\uD83C\uDF19 Mod Malam') + '</button>';
+    html += '<div class="dropdown-divider"></div>';
+    if (currentUser) {
+      html += '<button type="button" class="dropdown-item" onclick="closeMenu();handleLogout()">\u23CF Log Keluar</button>';
+    } else if (supabaseClient) {
+      html += '<button type="button" class="dropdown-item" onclick="closeMenu();document.getElementById(\'mainPage\').style.display=\'none\';document.getElementById(\'navBar\').style.display=\'none\';authMode=\'signin\';renderAuthScreen()">\u23CF Log Masuk / Daftar</button>';
+    }
+    html += '</div></div>';
+    root.innerHTML = html;
+  }
+  document.addEventListener('click', function (e) {
+    if (menuOpen && !e.target.closest('.dropdown-menu') && !e.target.closest('#menu-btn')) closeMenu();
+  });
+
+  function closeModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('modalRoot').innerHTML = ''; }
+
+  // ---------- render ----------
+  function render() {
+    if (!state.loaded) return;
+    ['home','vehicles','maintenance','documents'].forEach(p => {
+      document.getElementById('nav-' + p).classList.toggle('active', state.page === p);
+    });
+    const root = document.getElementById('bodyRoot');
+    if (state.page === 'vehicles') root.innerHTML = renderVehiclesPage();
+    else if (state.page === 'maintenance') root.innerHTML = renderMaintenancePage();
+    else if (state.page === 'documents') root.innerHTML = renderDocumentsPage();
+    else root.innerHTML = renderHomePage();
+    renderSyncBadge();
+  }
+
+  // ---------- HOME ----------
+  function renderHomePage() {
+    const items = [];
+    state.documents.forEach(d => items.push({ label: d.name, date: d.expiryDate, kind: 'Dokumen' }));
+    state.vehicles.forEach(v => {
+      if (v.roadTaxExpiry) items.push({ label: v.name + ' \u2014 Road Tax', date: v.roadTaxExpiry, kind: 'Kenderaan' });
+      if (v.insuranceExpiry) items.push({ label: v.name + ' \u2014 Insurans', date: v.insuranceExpiry, kind: 'Kenderaan' });
+    });
+    items.sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
+    const nearest = items[0];
+
+    let html = '';
+    if (nearest) {
+      const d = daysUntil(nearest.date);
+      html += '<div class="hero-card">';
+      html += '<div class="hero-label">Paling hampir luput</div>';
+      html += '<div class="hero-value">' + escapeHtml(nearest.label) + '</div>';
+      html += '<div class="hero-sub">' + (d < 0 ? 'Dah luput ' + Math.abs(d) + ' hari lalu' : d + ' hari lagi \u2014 ' + fmtDate(nearest.date)) + '</div>';
+      html += '</div>';
+    } else {
+      html += '<div class="hero-card"><div class="hero-label">Selamat Datang</div><div class="hero-value">Tambah kenderaan &amp; dokumen anda</div></div>';
+    }
+
+    const thisYear = new Date().getFullYear();
+    const yearTotal = state.maintenance.filter(m => (m.date || '').startsWith(String(thisYear))).reduce((s, m) => s + (Number(m.cost) || 0), 0);
+    html += '<div class="card"><div class="card-row"><div><div class="item-sub">Perbelanjaan servis tahun ' + thisYear + '</div><div class="hero-value" style="color:var(--ink);">' + fmtRM(yearTotal) + '</div></div><div style="font-size:26px;">\uD83D\uDD27</div></div></div>';
+
+    if (items.length > 1) {
+      html += '<div class="section-label">Tarikh Penting</div>';
+      items.slice(0, 5).forEach(it => {
+        html += '<div class="item-card" style="cursor:default;"><div class="card-row"><div><div class="item-title">' + escapeHtml(it.label) + '</div><div class="item-sub">' + it.kind + '</div></div>' + expiryBadge(it.date) + '</div></div>';
+      });
+    }
+
+    const recent = state.maintenance.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
+    if (recent.length) {
+      html += '<div class="section-label">Servis Terkini</div>';
+      recent.forEach(m => {
+        const v = state.vehicles.find(x => x.id === m.vehicleId);
+        html += '<div class="item-card" onclick="openMaintenanceModal(\'' + m.id + '\')"><div class="card-row"><div><div class="item-title">' + escapeHtml(m.type) + '</div><div class="item-sub">' + escapeHtml(v ? v.name : '') + ' \u00b7 ' + fmtDate(m.date) + '</div></div><div class="mono" style="font-weight:700;">' + fmtRM(m.cost) + '</div></div></div>';
+      });
+    }
+    return html;
+  }
+
+  // ---------- VEHICLES ----------
+  function renderVehiclesPage() {
+    let html = '<div class="section-label">Kenderaan Anda</div>';
+    if (state.vehicles.length === 0) {
+      html += '<div class="empty-state"><div class="ee-icon">\uD83D\uDE97</div><div class="ee-title">Belum ada kenderaan</div><div class="ee-sub">Tekan + untuk tambah kereta/motosikal anda</div></div>';
+    } else {
+      state.vehicles.forEach(v => {
+        html += '<div class="item-card" onclick="openVehicleModal(\'' + v.id + '\')">';
+        html += '<div class="item-title">' + escapeHtml(v.name) + '</div>';
+        html += '<div class="item-sub">' + escapeHtml(v.plate || 'Tiada no. plat') + '</div>';
+        html += '<div class="item-meta-row"><span class="item-sub">Road Tax</span>' + expiryBadge(v.roadTaxExpiry) + '</div>';
+        if (v.insuranceExpiry) html += '<div class="item-meta-row"><span class="item-sub">Insurans</span>' + expiryBadge(v.insuranceExpiry) + '</div>';
+        html += '</div>';
+      });
+    }
+    html += '<button type="button" class="fab-btn" onclick="openVehicleModal(null)">+</button>';
+    return html;
+  }
+
+  function openVehicleModal(id) {
+    const v = id ? state.vehicles.find(x => x.id === id) : null;
+    let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">' + (v ? 'Edit Kenderaan' : 'Kenderaan Baharu') + '</span><button class="close-btn" onclick="closeModal()">\u2715</button></div>';
+    html += '<div class="field"><label>Nama Kenderaan</label><input type="text" class="field-input" id="veh-name" placeholder="Cth: Myvi Merah" value="' + escapeHtml(v ? v.name : '') + '"></div>';
+    html += '<div class="field"><label>No. Plat</label><input type="text" class="field-input" id="veh-plate" placeholder="Cth: WXY 1234" value="' + escapeHtml(v ? v.plate : '') + '"></div>';
+    html += '<div class="field-row"><div class="field"><label>Road Tax Luput</label><input type="date" class="field-input" id="veh-roadtax" value="' + (v ? v.roadTaxExpiry || '' : '') + '"></div>';
+    html += '<div class="field"><label>Insurans Luput</label><input type="date" class="field-input" id="veh-insurance" value="' + (v ? v.insuranceExpiry || '' : '') + '"></div></div>';
+    html += '<div class="modal-actions">';
+    if (v) html += '<button type="button" class="btn btn-danger-text" onclick="deleteVehicle(\'' + v.id + '\')">Padam</button>';
+    html += '<button type="button" class="btn btn-primary" onclick="saveVehicle(' + (v ? '\'' + v.id + '\'' : 'null') + ')">Simpan</button>';
+    html += '</div></div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+  }
+  function saveVehicle(id) {
+    const name = document.getElementById('veh-name').value.trim();
+    if (!name) return;
+    const data = {
+      name,
+      plate: document.getElementById('veh-plate').value.trim(),
+      roadTaxExpiry: document.getElementById('veh-roadtax').value || null,
+      insuranceExpiry: document.getElementById('veh-insurance').value || null,
+    };
+    if (id) {
+      const idx = state.vehicles.findIndex(x => x.id === id);
+      state.vehicles[idx] = Object.assign(state.vehicles[idx], data);
+    } else {
+      state.vehicles.unshift(Object.assign({ id: uid(), createdAt: Date.now() }, data));
+    }
+    persistVehicles();
+    closeModal();
+    render();
+  }
+  function deleteVehicle(id) {
+    state.vehicles = state.vehicles.filter(x => x.id !== id);
+    state.maintenance = state.maintenance.filter(x => x.vehicleId !== id);
+    persistVehicles();
+    persistMaintenance();
+    closeModal();
+    render();
+  }
+
+  // ---------- MAINTENANCE ----------
+  let maintenanceFilterVehicle = 'all';
+  function renderMaintenancePage() {
+    let html = '<div class="section-label">Tapis Kenderaan</div>';
+    html += '<select class="field-input" style="margin-bottom:16px;" onchange="maintenanceFilterVehicle=this.value; render();">';
+    html += '<option value="all"' + (maintenanceFilterVehicle === 'all' ? ' selected' : '') + '>Semua Kenderaan</option>';
+    state.vehicles.forEach(v => { html += '<option value="' + v.id + '"' + (maintenanceFilterVehicle === v.id ? ' selected' : '') + '>' + escapeHtml(v.name) + '</option>'; });
+    html += '</select>';
+
+    const list = state.maintenance
+      .filter(m => maintenanceFilterVehicle === 'all' || m.vehicleId === maintenanceFilterVehicle)
+      .slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    const total = list.reduce((s, m) => s + (Number(m.cost) || 0), 0);
+    html += '<div class="card"><div class="card-row"><span class="item-sub">Jumlah kos</span><span class="hero-value" style="color:var(--ink);">' + fmtRM(total) + '</span></div></div>';
+
+    html += '<div class="section-label">Rekod Penyelenggaraan</div>';
+    if (list.length === 0) {
+      html += '<div class="empty-state"><div class="ee-icon">\uD83D\uDD27</div><div class="ee-title">Belum ada rekod</div><div class="ee-sub">Tekan + untuk log servis/penyelenggaraan</div></div>';
+    } else {
+      list.forEach(m => {
+        const v = state.vehicles.find(x => x.id === m.vehicleId);
+        html += '<div class="item-card" onclick="openMaintenanceModal(\'' + m.id + '\')">';
+        html += '<div class="card-row"><div><div class="item-title">' + escapeHtml(m.type) + '</div><div class="item-sub">' + escapeHtml(v ? v.name : '\u2014') + ' \u00b7 ' + fmtDate(m.date) + '</div></div><div class="mono" style="font-weight:700;">' + fmtRM(m.cost) + '</div></div>';
+        if (m.notes) html += '<div class="item-sub" style="margin-top:8px;">' + escapeHtml(m.notes) + '</div>';
+        html += '</div>';
+      });
+    }
+    html += '<button type="button" class="fab-btn" onclick="openMaintenanceModal(null)">+</button>';
+    return html;
+  }
+
+  function openMaintenanceModal(id) {
+    const m = id ? state.maintenance.find(x => x.id === id) : null;
+    if (state.vehicles.length === 0) {
+      alert('Sila tambah kenderaan dahulu sebelum log penyelenggaraan.');
+      return;
+    }
+    let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">' + (m ? 'Edit Rekod' : 'Rekod Penyelenggaraan') + '</span><button class="close-btn" onclick="closeModal()">\u2715</button></div>';
+    html += '<div class="field"><label>Kenderaan</label><select class="field-input" id="maint-vehicle">';
+    state.vehicles.forEach(v => { html += '<option value="' + v.id + '"' + (m && m.vehicleId === v.id ? ' selected' : '') + '>' + escapeHtml(v.name) + '</option>'; });
+    html += '</select></div>';
+    html += '<div class="field"><label>Jenis</label><div class="type-chip-row" id="maint-type-chips">';
+    MAINT_TYPES.forEach(t => { html += '<button type="button" class="type-chip' + (m && m.type === t ? ' active' : '') + '" data-type="' + escapeHtml(t) + '" onclick="selectMaintType(this)">' + t + '</button>'; });
+    html += '</div><input type="hidden" id="maint-type" value="' + (m ? escapeHtml(m.type) : '') + '"></div>';
+    html += '<div class="field-row"><div class="field"><label>Tarikh</label><input type="date" class="field-input" id="maint-date" value="' + (m ? m.date : todayStr()) + '"></div>';
+    html += '<div class="field"><label>Kos (RM)</label><input type="number" step="0.01" class="field-input" id="maint-cost" placeholder="0.00" value="' + (m ? m.cost : '') + '"></div></div>';
+    html += '<div class="field"><label>Bacaan Odometer (km) \u2014 pilihan</label><input type="number" class="field-input" id="maint-odo" value="' + (m && m.odometer ? m.odometer : '') + '"></div>';
+    html += '<div class="field"><label>Nota</label><textarea class="field-input" id="maint-notes">' + (m ? escapeHtml(m.notes || '') : '') + '</textarea></div>';
+    html += '<div class="modal-actions">';
+    if (m) html += '<button type="button" class="btn btn-danger-text" onclick="deleteMaintenance(\'' + m.id + '\')">Padam</button>';
+    html += '<button type="button" class="btn btn-primary" onclick="saveMaintenance(' + (m ? '\'' + m.id + '\'' : 'null') + ')">Simpan</button>';
+    html += '</div></div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+  }
+  function selectMaintType(btn) {
+    document.querySelectorAll('#maint-type-chips .type-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('maint-type').value = btn.dataset.type;
+  }
+  function saveMaintenance(id) {
+    const type = document.getElementById('maint-type').value || MAINT_TYPES[0];
+    const data = {
+      vehicleId: document.getElementById('maint-vehicle').value,
+      type,
+      date: document.getElementById('maint-date').value || todayStr(),
+      cost: parseFloat(document.getElementById('maint-cost').value) || 0,
+      odometer: document.getElementById('maint-odo').value ? parseInt(document.getElementById('maint-odo').value, 10) : null,
+      notes: document.getElementById('maint-notes').value.trim(),
+    };
+    if (id) {
+      const idx = state.maintenance.findIndex(x => x.id === id);
+      state.maintenance[idx] = Object.assign(state.maintenance[idx], data);
+    } else {
+      state.maintenance.unshift(Object.assign({ id: uid(), createdAt: Date.now() }, data));
+    }
+    persistMaintenance();
+    closeModal();
+    render();
+  }
+  function deleteMaintenance(id) {
+    state.maintenance = state.maintenance.filter(x => x.id !== id);
+    persistMaintenance();
+    closeModal();
+    render();
+  }
+
+  // ---------- DOCUMENTS ----------
+  function renderDocumentsPage() {
+    let html = '<div class="section-label">Dokumen Peribadi</div>';
+    if (state.documents.length === 0) {
+      html += '<div class="empty-state"><div class="ee-icon">\uD83D\uDCC4</div><div class="ee-title">Belum ada dokumen</div><div class="ee-sub">Cth: Lesen Memandu, Pasport \u2014 tekan + untuk tambah</div></div>';
+    } else {
+      state.documents.slice().sort((a, b) => daysUntil(a.expiryDate) - daysUntil(b.expiryDate)).forEach(d => {
+        html += '<div class="item-card" onclick="openDocumentModal(\'' + d.id + '\')">';
+        html += '<div class="card-row"><div><div class="item-title">' + escapeHtml(d.name) + '</div>' + (d.notes ? '<div class="item-sub">' + escapeHtml(d.notes) + '</div>' : '') + '</div>' + expiryBadge(d.expiryDate) + '</div>';
+        html += '</div>';
+      });
+    }
+    html += '<button type="button" class="fab-btn" onclick="openDocumentModal(null)">+</button>';
+    return html;
+  }
+  function openDocumentModal(id) {
+    const d = id ? state.documents.find(x => x.id === id) : null;
+    let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">' + (d ? 'Edit Dokumen' : 'Dokumen Baharu') + '</span><button class="close-btn" onclick="closeModal()">\u2715</button></div>';
+    html += '<div class="field"><label>Nama Dokumen</label><input type="text" class="field-input" id="doc-name" placeholder="Cth: Lesen Memandu" value="' + escapeHtml(d ? d.name : '') + '"></div>';
+    html += '<div class="field"><label>Tarikh Luput</label><input type="date" class="field-input" id="doc-expiry" value="' + (d ? d.expiryDate || '' : '') + '"></div>';
+    html += '<div class="field"><label>Nota</label><textarea class="field-input" id="doc-notes">' + (d ? escapeHtml(d.notes || '') : '') + '</textarea></div>';
+    html += '<div class="modal-actions">';
+    if (d) html += '<button type="button" class="btn btn-danger-text" onclick="deleteDocument(\'' + d.id + '\')">Padam</button>';
+    html += '<button type="button" class="btn btn-primary" onclick="saveDocument(' + (d ? '\'' + d.id + '\'' : 'null') + ')">Simpan</button>';
+    html += '</div></div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+  }
+  function saveDocument(id) {
+    const name = document.getElementById('doc-name').value.trim();
+    if (!name) return;
+    const data = { name, expiryDate: document.getElementById('doc-expiry').value || null, notes: document.getElementById('doc-notes').value.trim() };
+    if (id) {
+      const idx = state.documents.findIndex(x => x.id === id);
+      state.documents[idx] = Object.assign(state.documents[idx], data);
+    } else {
+      state.documents.unshift(Object.assign({ id: uid(), createdAt: Date.now() }, data));
+    }
+    persistDocuments();
+    closeModal();
+    render();
+  }
+  function deleteDocument(id) {
+    state.documents = state.documents.filter(x => x.id !== id);
+    persistDocuments();
+    closeModal();
+    render();
+  }
+
+  // ---------- init ----------
+  initAuth();
+</script>
+</body>
+</html>
